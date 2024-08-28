@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Map with Info Panel</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+        #map {
+            width: 50%;
+            height: 100%;
+        }
+        #info-panel {
+            width: 50%;
+            background-color: #f0f0f0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow: auto;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .info-item {
+            font-size: 2em;
+            margin: 10px 0;
+            color: #333;
+        }
+        .info-item.highlight {
+            color: #d9534f; /* Highlight color */
+        }
+        .info-label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="info-panel">
+    <div class="info-item" id="info-tract-id">Hover over a tract</div>
+    <div class="info-item" id="info-population"></div>
+    <div class="info-item" id="info-dieselpm"></div>
+</div>
+
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoieW9obWFuIiwiYSI6IkxuRThfNFkifQ.u2xRJMiChx914U7mOZMiZw';
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/standard',
+        center: [-117.7, 34],
+        zoom: 8,
+        maxZoom: 14
+    });
+
+    map.on('style.load', () => {
+        // Add the base tracts layer
+        map.addSource('tracts', {
+            'type': 'geojson',
+            'data': '../data/calenviroscreen/calenviroscreen.geojson'
+        });
+
+        map.addLayer({
+            'id': 'tracts-choropleth',
+            'type': 'fill',
+            'source': 'tracts',
+            'layout': {},
+            'paint': {
+                'fill-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['get', 'DieselPM_P'],
+                    0, '#f7f7f7',
+                    20, '#cccccc',
+                    40, '#969696',
+                    60, '#636363',
+                    80, '#252525'
+                ],
+                'fill-opacity': 0.8
+            }
+        });
+
+        // Create the highlight layer (tract outline) that will change on hover
+        map.addLayer({
+            'id': 'tract-highlight',
+            'type': 'line',
+            'source': 'tracts',
+            'layout': {},
+            'paint': {
+                'line-color': 'yellow',
+                'line-width': 4
+            },
+            // Initially hide the highlight layer by applying an empty filter
+            'filter': ['==', 'GEOID', '']
+        });
+
+        // Event handlers for hover effect
+        map.on('mouseenter', 'tracts-choropleth', () => {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+
+        map.on('mouseleave', 'tracts-choropleth', () => {
+            map.getCanvas().style.cursor = '';
+            // Remove the highlight and reset info panel when mouse leaves
+            map.setFilter('tract-highlight', ['==', 'GEOID', '']);
+            document.getElementById('info-tract-id').textContent = 'Hover over a tract';
+            document.getElementById('info-population').textContent = '';
+            document.getElementById('info-dieselpm').textContent = '';
+        });
+
+        map.on('mousemove', 'tracts-choropleth', (e) => {
+            // Get the GEOID of the hovered tract and other properties
+            const hoveredTract = e.features[0].properties.GEOID;
+            const population = e.features[0].properties.Population;
+            const dieselPM = e.features[0].properties.DieselPM_P;
+
+            // Update the highlight layer filter to show the hovered tract
+            map.setFilter('tract-highlight', ['==', 'GEOID', hoveredTract]);
+
+            // Update the info panel with the selected tract's data
+            document.getElementById('info-tract-id').innerHTML = `<span class="info-label">Tract ID:</span> ${hoveredTract}`;
+            document.getElementById('info-population').innerHTML = `<span class="info-label">Population:</span> ${population}`;
+            document.getElementById('info-dieselpm').innerHTML = `<span class="info-label">Diesel PM:</span> ${dieselPM}`;
+        });
+    });
+</script>
+
+</body>
+</html>
