@@ -167,7 +167,8 @@
 	mapboxgl.accessToken = 'pk.eyJ1IjoieW9obWFuIiwiYSI6IkxuRThfNFkifQ.u2xRJMiChx914U7mOZMiZw';
 	const map = new mapboxgl.Map({
 		container: 'map',
-		style: 'mapbox://styles/mapbox/standard',
+		// style: 'mapbox://styles/mapbox/standard',
+		style: 'mapbox://styles/yohman/cm0do2sop00vi01rb5ne92bkd',
 		center: [-117.7, 34],
 		zoom: 8,
 		maxZoom: 16
@@ -355,7 +356,7 @@
 		map.addLayer({
 			'id': 'warehouses',
 			'type': 'circle',
-			'slot': 'middle',
+			'slot': 'top',
 			'source': 'warehouses',
 			'layout': {},
 			'paint': {
